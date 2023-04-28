@@ -1,0 +1,123 @@
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <!-- import CSS -->
+    <link rel="stylesheet" href="../static/index.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <!-- import JavaScript -->
+    <script src="https://unpkg.com/element-plus"></script>
+    <title>Mass Grading</title>
+</head>
+<body>
+<div class="container">
+    <h2>UCI Digital Learning Lab</h2>
+    <h4>Mass Grading Project</h4>
+    <div class="google">
+        <div id="app">
+            <div>
+                <el-divider/>
+            </div>
+            <el-button @click="selectDir" class="ml-2" type="primary" size="large" round>Select Local Directory
+            </el-button>
+
+            <div class="slider-demo-block">
+                <span class="demonstration">Temperature(0-2)</span>
+                <el-slider v-model="temp_val" :step="0.1" :min="0" :max="2" show-input show-stops/>
+            </div>
+            <div>
+                <el-divider/>
+            </div>
+            <el-button v-loading.fullscreen.lock="is_loading"
+                       element-loading-text="Grading, do not refresh... (Avg time cost is 20s per essay.)"
+                       class="ml-2" type="success" size="large" @click="showConfirmMessageBox">
+                Start Grading
+            </el-button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const App = {
+        data() {
+            return {
+                temp_val: 1.0,
+                dir_name: null,
+                is_loading: false
+            };
+        },
+
+        methods: {
+            showNotification(title, msg, type) {
+                this.$notify({
+                    title: title,
+                    message: msg,
+                    type: type,
+                    duration: 0
+                })
+            },
+
+            async selectDir() {
+                const directoryHandle = await window.showDirectoryPicker();
+                const directoryPath = directoryHandle.name;
+
+                // set the value of the hidden input field
+                this.dir_name = directoryPath;
+
+                try {
+                    const resp = await axios.post('/fetch_dir_path', {dir_name: this.dir_name})
+
+                    this.showNotification('Info', resp.data["message"], 'info')
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+
+            async showConfirmMessageBox() {
+                try {
+                    msg = `Selected Directory: ${this.dir_name} & Selected Temperature: ${this.temp_val}`
+                    await this.$confirm(msg, 'Please double check', {
+                        confirmButtonText: 'OK',
+                        cancelButtonText: 'Cancel',
+                        type: 'warning'
+                    })
+                    await this.submitGradingTask()
+                } catch (error) {
+                    this.showNotification('Info', 'You canceled grading.', 'info')
+                }
+            },
+
+            async submitGradingTask() {
+                this.is_loading = true
+
+                try {
+                    await axios.post('/grading',
+                        {temp_val: this.temp_val, dir_name: this.dir_name},
+                        {timeout: 3600 * 1000})
+                        .then(
+                            resp => {
+                                this.showNotification('Success', resp.data["message"], 'success')
+                            }
+                        )
+                        .catch(error => {
+                            this.showNotification('Error', error.message, 'error')
+                        });
+                } catch (error) {
+
+                } finally {
+
+                    this.is_loading = false
+                }
+            },
+        }
+    }
+
+    const app = Vue.createApp(App);
+    app.use(ElementPlus); // use elementUI as plugin
+    app.mount("#app");
+</script>
+</body>
+</html>

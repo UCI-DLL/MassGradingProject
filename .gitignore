@@ -1,0 +1,30 @@
+venv/
+.env
+.flaskenv
+env/
+venv/
+.venv/
+myvenv/
+.myvenv/
+env*
+
+*.pyc
+__pycache__/
+.idea/*
+.vscode
+
+.pytest_cache/
+.DS_Store
+.coverage
+htmlcov/
+
+dist/
+build/
+*.egg-info/
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# assets
+massgrading_app/static/files/*

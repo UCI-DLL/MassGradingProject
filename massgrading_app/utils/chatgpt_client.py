@@ -27,14 +27,14 @@ class ChatGPTClient:
         self.temp = temperature
         self.outcome_dir_path = os.path.join(
             self.dir_path,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            datetime.now().strftime(r"%Y-%m-%d %H-%M-%S")
         )
         os.environ["outcome_dir_path"] = self.outcome_dir_path
         self.init_instructions()
 
     def init_instructions(self):
         instruction_path = os.path.join(self.dir_path, "chatgpt_instruction.txt")
-        with open(instruction_path, 'r') as f:
+        with open(instruction_path, 'r', encoding='utf8') as f:
             actor_instruction = {
                 "role": "system",
                 "content": f.read()
@@ -42,7 +42,7 @@ class ChatGPTClient:
             self.msg_lst.append(
                 actor_instruction
             )
-
+            print(self.outcome_dir_path)
             exec_log_write(self.outcome_dir_path, actor_instruction)
 
     def chat(self, input_prompt) -> object:
@@ -89,14 +89,15 @@ class ChatGPTClient:
                     exec_log_write(self.outcome_dir_path, f'-----------------------')
 
                     resp_msg = resp_msg["content"]
+                    print(resp_msg)
 
                     try:
-                        resp_dict = json.loads(resp_msg)  # transfer value type from str to dict
+                        resp_dict = json.loads(resp_msg.strip(","))  # transfer value type from str to dict
                     except:
                         # edge case: remove trailing comma
-                        resp_msg = resp_msg.rsplit(',', 1)[0] + resp_msg[resp_msg.rindex(',') + 1:] \
-                            if ',' in resp_msg[:-1] else resp_msg[:-1]
-                        resp_dict = json.loads(resp_msg)
+                        if resp_msg.startswith('\ufeff'):
+                            resp_msg = resp_msg.split('\ufeff')[1]
+                        resp_dict = json.loads(resp_msg.strip(","))
 
                     csv_data = {"name": file.split(sep='.')[0]}
                     csv_data.update(resp_dict)

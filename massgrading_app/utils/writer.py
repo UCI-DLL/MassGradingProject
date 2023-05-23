@@ -15,7 +15,7 @@ def csv_write(dir_path, data):
         if isinstance(val, list):
             data[key] = " ".join(val)
 
-    with open(file_path, mode='a', newline='') as csv_file:
+    with open(file_path, mode='a', newline='', encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
 
         if not file_exists:
@@ -27,6 +27,8 @@ def exec_log_write(dir_path, data):
     if not dir_path:
         return
     if not os.path.exists(dir_path):
+#        print(os.path.normpath(repr(dir_path)))
+#        os.mkdir(os.path.normpath(repr(dir_path)).replace('\\', '/'))
         os.mkdir(dir_path)
 
     file_path = os.path.join(dir_path, "execution_log.log")

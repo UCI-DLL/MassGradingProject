@@ -32,26 +32,35 @@ Please follow the user guide to set up the project properly before using.
 2. Create a `.flaskenv` file and a `.env` file to properly set up runtime variables under the project root directory.
 
 `.flaskenv` on Mac/Linux
+```
     export FLASK_APP='massgrading_app'
     export FLASK_DEBUG='true'
+```
 
 `.env` on Mac/Linux
+```
     export API_KEY='your_API_key'
     export ORG_ID='your_org_ID'
     export MODEL_ENGINE='gpt-3.5-turbo'
-
+```
 
 `.flaskenv` on Windows
+```
     FLASK_APP=massgrading_app/__init__.py
     FLASK_DEBUG='true'
+```
 
 `.env` on Windows
+```
     API_KEY=your_API_key
     ORG_ID=your_org_ID
     MODEL_ENGINE=gpt-3.5-turbo
+```
 
 You may see this issue:
+```
     openai.error.RateLimitError: That model is currently overloaded with other requests. You can retry your request, or contact us through our help center at help.openai.com if the error persists. (Please include the request ID e3c35f00d1d5611b5493aa05509711f0 in your message.)
+```
 
 3. Create a virtual environment and activate it. We'll do this in a directory called `venv`
     cd DLL_Mass_Grading

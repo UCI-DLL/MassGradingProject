@@ -3,6 +3,7 @@ import os
 import docx2txt
 import json
 import time
+import pandas as pd
 
 from .writer import csv_write, exec_log_write
 from datetime import datetime
@@ -77,35 +78,65 @@ class ChatGPTClient:
 
     @time_it
     def grading(self):
-        for root, dirs, files in os.walk(self.dir_path):
-            for file in files:
-                if file.endswith('.docx'):
-                    file_path = os.path.join(root, file)
-                    file_text = docx2txt.process(file_path)
-                    file_text = "<<" + file_text + ">>"
+        df = pd.read_csv(os.path.join(self.dir_path, "data.csv"))
 
-                    exec_log_write(self.outcome_dir_path, f'[[Now grading {file}]]\n')
-                    resp_msg = self.chat(file_text)
-                    exec_log_write(self.outcome_dir_path, f'-----------------------')
+        # Iterate over each row in the dataframe
+        for index, row in df.iterrows():
+            print(f"Row {index + 1}")
+            # essay_id_comp and full_text
+            
+            file_text = "<<" + row['full_text'] + ">>"
+            e_id = row['essay_id_comp']
 
-                    resp_msg = resp_msg["content"]
-                    print(resp_msg)
+            exec_log_write(self.outcome_dir_path, f'[[Now grading {e_id}]]\n')
+            resp_msg = self.chat(file_text)
+            exec_log_write(self.outcome_dir_path, f'-----------------------')
+            resp_msg = resp_msg["content"]
+            print(resp_msg)
+            try:
+                resp_dict = json.loads(resp_msg.strip(","))  # transfer value type from str to dict
+            except:
+                # edge case: remove trailing comma
+                if resp_msg.startswith('\ufeff'):
+                    resp_msg = resp_msg.split('\ufeff')[1]
+                resp_dict = json.loads(resp_msg.strip(","))
 
-                    try:
-                        resp_dict = json.loads(resp_msg.strip(","))  # transfer value type from str to dict
-                    except:
-                        # edge case: remove trailing comma
-                        if resp_msg.startswith('\ufeff'):
-                            resp_msg = resp_msg.split('\ufeff')[1]
-                        resp_dict = json.loads(resp_msg.strip(","))
+            csv_data = {"name": e_id}
+            csv_data.update(resp_dict)
+            # add essay column
+            csv_data["essay"] = file_text[2:-2]
 
-                    csv_data = {"name": file.split(sep='.')[0]}
-                    csv_data.update(resp_dict)
+            csv_write(self.outcome_dir_path, csv_data)
+        
+        # for root, dirs, files in os.walk(self.dir_path):
+        #     for file in files:
+        #         if file.endswith('.docx'):
+        #             file_path = os.path.join(root, file)
+        #             file_text = docx2txt.process(file_path)
+        #             file_text = "<<" + file_text + ">>"
 
-                    # add essay column
-                    csv_data["essay"] = file_text[2:-2]
+        #             exec_log_write(self.outcome_dir_path, f'[[Now grading {file}]]\n')
+        #             resp_msg = self.chat(file_text)
+        #             exec_log_write(self.outcome_dir_path, f'-----------------------')
 
-                    csv_write(self.outcome_dir_path, csv_data)
+        #             resp_msg = resp_msg["content"]
+        #             print(resp_msg)
+
+        #             try:
+        #                 resp_dict = json.loads(resp_msg.strip(","))  # transfer value type from str to dict
+        #             except:
+        #                 # edge case: remove trailing comma
+        #                 if resp_msg.startswith('\ufeff'):
+        #                     resp_msg = resp_msg.split('\ufeff')[1]
+        #                 resp_dict = json.loads(resp_msg.strip(","))
+
+        #             csv_data = {"name": file.split(sep='.')[0]}
+        #             csv_data.update(resp_dict)
+
+        #             # add essay column
+        #             csv_data["essay"] = file_text[2:-2]
+
+        #             csv_write(self.outcome_dir_path, csv_data)
 
     def get_outcome_dirname(self):
         return self.outcome_dir_path
